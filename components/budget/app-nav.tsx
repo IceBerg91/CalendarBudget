@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CalendarDays, RefreshCcw, Wallet, TrendingDown } from 'lucide-react'
+import { CalendarDays, RefreshCcw, TrendingDown } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
@@ -20,8 +21,14 @@ export function AppNav() {
         <div className="flex items-center justify-between h-14">
           {/* Brand */}
           <div className="flex items-center gap-2">
-            <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Wallet className="size-4 text-brand" />
+            <div className="size-8 rounded-full overflow-hidden bg-brand/10 flex items-center justify-center">
+              <Image
+                src="/images/lumi-logo.png"
+                alt="Lumi logo"
+                width={32}
+                height={32}
+                className="size-8 object-cover"
+              />
             </div>
             <span className="font-semibold text-foreground tracking-tight">Lumi</span>
           </div>
