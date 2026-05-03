@@ -1,72 +1,57 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { BudgetCalendar } from '@/components/budget/budget-calendar'
 import { SummaryStats } from '@/components/budget/summary-stats'
-import { generateSampleTransactions, type Transaction } from '@/lib/budget-types'
+import { type Transaction } from '@/lib/budget-types'
+import { useMonthTransactions } from '@/hooks/use-transactions'
+import { useAuth } from '@/hooks/use-auth'
+import { addTransaction, deleteTransaction, toggleTransactionPaid } from '@/lib/supabase/transactions'
 
 export default function BudgetPage() {
   const [currentMonth, setCurrentMonth] = useState(() => new Date())
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [isHydrated, setIsHydrated] = useState(false)
+  const { user, isLoading: authLoading } = useAuth()
+  
+  const { 
+    transactions, 
+    isLoading: transactionsLoading, 
+    mutate 
+  } = useMonthTransactions(currentMonth.getFullYear(), currentMonth.getMonth())
 
-  // Initialize sample data only on the client to prevent hydration mismatch
-  useEffect(() => {
-    if (!isHydrated) {
-      const now = new Date()
-      setTransactions(generateSampleTransactions(now.getFullYear(), now.getMonth()))
-      setIsHydrated(true)
-    }
-  }, [isHydrated])
-
-  // Filter transactions for the current month view
-  const currentMonthTransactions = transactions.filter(t => {
-    return (
-      t.date.getMonth() === currentMonth.getMonth() &&
-      t.date.getFullYear() === currentMonth.getFullYear()
-    )
-  })
+  const isLoading = authLoading || transactionsLoading
 
   const handleMonthChange = useCallback((newMonth: Date) => {
     setCurrentMonth(newMonth)
-    
-    // Generate sample data for the new month if none exists
-    const monthTransactions = transactions.filter(t => {
-      return (
-        t.date.getMonth() === newMonth.getMonth() &&
-        t.date.getFullYear() === newMonth.getFullYear()
-      )
-    })
-    
-    if (monthTransactions.length === 0) {
-      const newTransactions = generateSampleTransactions(
-        newMonth.getFullYear(),
-        newMonth.getMonth()
-      )
-      setTransactions(prev => [...prev, ...newTransactions])
+  }, [])
+
+  const handleAddTransaction = useCallback(async (transaction: Omit<Transaction, 'id'>) => {
+    if (!user) {
+      console.error('User not authenticated')
+      return
     }
-  }, [transactions])
-
-  const handleAddTransaction = useCallback((transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    
+    const newTransaction = await addTransaction(transaction, user.id)
+    if (newTransaction) {
+      mutate()
     }
-    setTransactions(prev => [...prev, newTransaction])
-  }, [])
+  }, [user, mutate])
 
-  const handleDeleteTransaction = useCallback((id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id))
-  }, [])
+  const handleDeleteTransaction = useCallback(async (id: string) => {
+    const success = await deleteTransaction(id)
+    if (success) {
+      mutate()
+    }
+  }, [mutate])
 
-  const handleTogglePaid = useCallback((id: string) => {
-    setTransactions(prev =>
-      prev.map(t => (t.id === id ? { ...t, paid: !t.paid } : t))
-    )
-  }, [])
+  const handleTogglePaid = useCallback(async (id: string) => {
+    const updated = await toggleTransactionPaid(id)
+    if (updated) {
+      mutate()
+    }
+  }, [mutate])
 
-  // Prevent hydration mismatch by not rendering data-dependent content until client-side
-  if (!isHydrated) {
+  // Show loading skeleton while data is being fetched
+  if (isLoading) {
     return (
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -89,7 +74,7 @@ export default function BudgetPage() {
         {/* Summary Stats */}
         <section className="mb-8">
           <SummaryStats 
-            transactions={currentMonthTransactions} 
+            transactions={transactions} 
             currentMonth={currentMonth}
           />
         </section>
