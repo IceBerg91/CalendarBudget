@@ -1,17 +1,23 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { BudgetCalendar } from '@/components/budget/budget-calendar'
 import { SummaryStats } from '@/components/budget/summary-stats'
 import { generateSampleTransactions, type Transaction } from '@/lib/budget-types'
 
 export default function BudgetPage() {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    // Initialize with sample data for the current month
-    const now = new Date()
-    return generateSampleTransactions(now.getFullYear(), now.getMonth())
-  })
+  const [currentMonth, setCurrentMonth] = useState(() => new Date())
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Initialize sample data only on the client to prevent hydration mismatch
+  useEffect(() => {
+    if (!isHydrated) {
+      const now = new Date()
+      setTransactions(generateSampleTransactions(now.getFullYear(), now.getMonth()))
+      setIsHydrated(true)
+    }
+  }, [isHydrated])
 
   // Filter transactions for the current month view
   const currentMonthTransactions = transactions.filter(t => {
@@ -58,6 +64,24 @@ export default function BudgetPage() {
       prev.map(t => (t.id === id ? { ...t, paid: !t.paid } : t))
     )
   }, [])
+
+  // Prevent hydration mismatch by not rendering data-dependent content until client-side
+  if (!isHydrated) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-28 bg-muted rounded-lg" />
+              ))}
+            </div>
+            <div className="h-96 bg-muted rounded-lg" />
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-background">
