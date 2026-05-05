@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { CalendarDays, RefreshCcw, TrendingDown } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const NAV_LINKS = [
   { href: '/', label: 'Calendar', icon: CalendarDays },
@@ -55,6 +56,9 @@ export function AppNav() {
               )
             })}
           </nav>
+
+          {/* Theme toggle */}
+          <ThemeToggle />
         </div>
       </div>
     </header>
