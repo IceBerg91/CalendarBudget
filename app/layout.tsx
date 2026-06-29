@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { AppNav } from '@/components/budget/app-nav'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -38,7 +37,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-background">
       <body className="font-sans antialiased min-h-screen bg-background text-foreground">
-        <AppNav />
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
